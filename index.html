@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LLM Query ke Database</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    /* Tab navigation */
+    .tabs {
+      display: flex;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      background-color: #e0e0e0;
+      border-radius: 10px 10px 0 0;
+      margin-right: 5px;
+    }
+    .tab.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      resize: vertical;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .output-area {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-top: 15px;
+      white-space: pre-wrap;
+    }
+
+    /* Optional: Style for table preview */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #aaa;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>LLM Query ke Database MySQL</h2>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('chat')">💬 Chat</div>
+    <div class="tab" onclick="switchTab('visual')">📊 Visualisasi & Tabel</div>
+  </div>
+
+  <!-- Tab 1: Chat Area -->
+  <div class="tab-content active" id="tab-chat">
+    <label for="user_query">Masukkan Pertanyaan:</label>
+    <textarea id="user_query" rows="4" placeholder="Tanyakan sesuatu..."></textarea>
+    <button onclick="submitQuery()">Kirim</button>
+
+    <div class="output-area" id="output_area">
+      <!-- Hasil LLM akan tampil di sini -->
+    </div>
+  </div>
+
+  <!-- Tab 2: Visualization/Table -->
+  <div class="tab-content" id="tab-visual">
+    <div class="output-area" id="visual_area">
+      <!-- Nanti bisa isi visualisasi/chart di sini -->
+      <p>Visualisasi atau hasil tabel dari query akan ditampilkan di sini.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabId) {
+    // Tab buttons
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    if (tabId === 'chat') {
+      document.querySelector('.tab:nth-child(1)').classList.add('active');
+    } else {
+      document.querySelector('.tab:nth-child(2)').classList.add('active');
+    }
+
+    // Tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+
+  function submitQuery() {
+    const userQuery = document.getElementById('user_query').value;
+    if (!userQuery) {
+        alert('Tolong masukkan pertanyaan.');
+        return;
+    }
+
+    fetch('http://127.0.0.1:1000/generate', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: userQuery, user_id: '123' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Display the response text
+        document.getElementById('output_area').innerHTML = `
+        <strong>Respon LLM:</strong><p>${data.response_text}</p>`;
+
+        // Build visual area with dynamic image and HTML table paths
+        let visualHtml = `
+        <h3>Visualisasi Hasil</h3>
+        <div>
+            <img src="${data.image_path}" alt="Visualisasi Gambar" style="max-width:100%; border:1px solid #ccc; border-radius:5px; margin-bottom:15px;" />
+        </div>
+        <div id="html_table_container">
+            <!-- Tabel akan dimuat dari file eksternal -->
+        </div>
+        `;
+        document.getElementById('visual_area').innerHTML = visualHtml;
+
+        // Load table from dynamic HTML path
+        fetch(data.table_path)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('html_table_container').innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('html_table_container').innerHTML = '<p style="color:red;">Gagal memuat tabel.</p>';
+            console.error('Error loading table:', err);
+        });
+    })
+    .catch(error => {
+        document.getElementById('output_area').innerHTML =
+        '<p style="color:red;">Terjadi kesalahan saat memproses permintaan.</p>';
+        console.error('Error:', error);
+    });
+    }
+
+</script>
+
+</body>
+</html>
