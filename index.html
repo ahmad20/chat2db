@@ -153,7 +153,7 @@
     .then(data => {
         // Display the response text
         document.getElementById('output_area').innerHTML = `
-        <strong>Respon LLM:</strong><p>${data.response_text}</p>`;
+        <strong>Respon LLM:</strong><p>${data.response}</p>`;
 
         // Build visual area with dynamic image and HTML table paths
         let visualHtml = `
@@ -174,7 +174,8 @@
             document.getElementById('html_table_container').innerHTML = html;
         })
         .catch(err => {
-            document.getElementById('html_table_container').innerHTML = '<p style="color:red;">Gagal memuat tabel.</p>';
+            document.getElementById('html_table_container').innerHTML =
+            '<p style="color:red;">Gagal memuat tabel.</p>';
             console.error('Error loading table:', err);
         });
     })
